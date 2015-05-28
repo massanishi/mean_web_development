@@ -5,12 +5,17 @@ var config = require('./config'),
     bodyParser = require('body-parser'),
     methodOverride = require('method-override'),
     session = require('express-session'),
+    http = require('http'),
+    socketio = require('socket.io'),
+    MongoStore = require('connect-mongo')(session),
     passport = require('passport'),
     flash = require('connect-flash');
 
 
-module.exports = function() {
+module.exports = function(db) {
     var app = express();
+    var server = http.createServer(app);
+    var io = socketio.listen(server);
 
     if (process.env.NODE_ENV === 'development') {
         app.use(morgan('dev'));
@@ -25,10 +30,15 @@ module.exports = function() {
     app.use(bodyParser.json());
     app.use(methodOverride());
 
+    var mongoStore = MongoStore({
+        db: db.connection.db
+    });
+
     app.use(session({
         saveUninitialized: true,
         resave: true,
-        secret: config.sessionSecret
+        secret: config.sessionSecret,
+        store: mongoStore
     }));
 
     app.set('views', './app/views');
@@ -46,5 +56,5 @@ module.exports = function() {
     // When express first try to look for HTTP request paths in the static files folder, the reponse gets flower since it has to wait for a filesystem I/O operation
     app.use(express.static('./public'));
 
-    return app;
+    return server;
 };
