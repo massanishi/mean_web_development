@@ -30,7 +30,7 @@ module.exports = function(db) {
     app.use(bodyParser.json());
     app.use(methodOverride());
 
-    var mongoStore = MongoStore({
+    var mongoStore = new MongoStore({
         db: db.connection.db
     });
 
@@ -52,9 +52,12 @@ module.exports = function(db) {
     require('../app/routes/users.server.routes.js')(app);
     require('../app/routes/articles.server.routes.js')(app);
 
+    require('./socketio')(server, io, mongoStore);
     // This is placed at last on purpose
     // When express first try to look for HTTP request paths in the static files folder, the reponse gets flower since it has to wait for a filesystem I/O operation
     app.use(express.static('./public'));
+
+
 
     return server;
 };
